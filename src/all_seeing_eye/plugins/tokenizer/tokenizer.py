@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from dataclasses import dataclass
 from typing import List
-from plugins.plugins import Plugin
+from all_seeing_eye.plugins.plugins import Plugin
 import re
 
 @dataclass
@@ -12,7 +12,7 @@ class Tokenizer(Plugin):
     """
     _instance = None
     _class = None
-    _module_name = 'plugins.tokenizer.tokenize'
+    _module_name = 'all_seeing_eye.plugins.tokenizer.tokenize'
     _type = 'Token'
 
     @abstractmethod

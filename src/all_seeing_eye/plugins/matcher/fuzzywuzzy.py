@@ -1,6 +1,6 @@
 from fuzzywuzzy import fuzz
 from dataclasses import dataclass
-from plugins.matcher.matcher import Matcher
+from all_seeing_eye.plugins.matcher.matcher import Matcher
 
 @dataclass
 class FuzzyWuzzy(Matcher):

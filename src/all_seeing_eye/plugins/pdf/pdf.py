@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from dataclasses import dataclass
 from typing import List, Generator, Dict
-from plugins.plugins import Plugin
+from all_seeing_eye.plugins.plugins import Plugin
 
 @dataclass
 class Pdf(Plugin):
@@ -11,7 +11,7 @@ class Pdf(Plugin):
     """
     _instance = None
     _class = None
-    _module_name = 'plugins.pdf.pdfplumber'
+    _module_name = 'all_seeing_eye.plugins.pdf.pdfplumber'
     _type = 'PDF'
 
     @abstractmethod

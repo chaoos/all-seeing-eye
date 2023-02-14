@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from plugins.segmentizer.segmentizer import Segmentizer
+from all_seeing_eye.plugins.segmentizer.segmentizer import Segmentizer
 
 @dataclass
 class Default(Segmentizer):

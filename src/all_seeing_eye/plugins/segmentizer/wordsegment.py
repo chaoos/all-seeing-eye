@@ -1,6 +1,6 @@
 import wordsegment
 from dataclasses import dataclass, field
-from plugins.segmentizer.segmentizer import Segmentizer
+from all_seeing_eye.plugins.segmentizer.segmentizer import Segmentizer
 import sys
 
 @dataclass

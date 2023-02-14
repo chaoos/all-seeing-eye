@@ -1,6 +1,6 @@
 import pdfplumber
 from dataclasses import dataclass
-from plugins.pdf.pdf import Pdf
+from all_seeing_eye.plugins.pdf.pdf import Pdf
 
 @dataclass
 class PdfPlumber(Pdf):

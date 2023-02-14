@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from dataclasses import dataclass, field
 from typing import Dict
-from plugins.plugins import Plugin
+from all_seeing_eye.plugins.plugins import Plugin
 import re
 
 @dataclass
@@ -12,7 +12,7 @@ class Segmentizer(Plugin):
     """
     _instance = None
     _class = None
-    _module_name = 'plugins.segmentizer.wordsegment'
+    _module_name = 'all_seeing_eye.plugins.segmentizer.wordsegment'
     _type = 'Segment'
 
     def default_segment(self, word: str) -> str:

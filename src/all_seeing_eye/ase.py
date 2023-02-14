@@ -12,11 +12,11 @@ from typing import Dict, Union, List, Iterator
 from itertools import chain
 from dacite import from_dict, Config
 from abc import ABC, abstractmethod
-from plugins.pdf.pdf import Pdf
-from plugins.segmentizer.segmentizer import Segmentizer
-from plugins.tokenizer.tokenizer import Tokenizer
-from plugins.matcher.matcher import Matcher
-from plugins.ui.ui import Ui
+from all_seeing_eye.plugins.pdf.pdf import Pdf
+from all_seeing_eye.plugins.segmentizer.segmentizer import Segmentizer
+from all_seeing_eye.plugins.tokenizer.tokenizer import Tokenizer
+from all_seeing_eye.plugins.matcher.matcher import Matcher
+from all_seeing_eye.plugins.ui.ui import Ui
 from typing import Generator, List, Callable, Optional
 from functools import partial, reduce
 
@@ -305,7 +305,7 @@ class App():
         self.config = config_factory(self, self.args)
         self.matches.on_append = self.config.ui.new_match # todo: why class method?
 
-def main():
+def parser():
     parser = argparse.ArgumentParser(description='All-seeing Eye: Search PDF metadata and contents')
     parser.add_argument('query', help='Query for substring in metadata')
     parser.add_argument('-d','--directories', type=os.path.expanduser,
@@ -326,8 +326,11 @@ def main():
     parser.add_argument('--config', type=os.path.expanduser,
         help='path to the config file',
         default='~/.config/ase/config.json')
+    return parser    
 
-    app = App(parser.parse_args())
+def main():
+
+    app = App(parser().parse_args())
     print(f"{app.config = }")
 
     with app.config.ui(app) as ui:

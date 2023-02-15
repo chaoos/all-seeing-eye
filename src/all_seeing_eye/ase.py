@@ -53,8 +53,6 @@ class PdfMeta(FileIterator):
 
 @dataclass
 class PdfIterator(ABC, FileIterator):
-    path: str = field(default=None)
-    config: SearchConfig = field(default_factory=SearchConfig)
     iter_items: List[Item] = field(default_factory=list)
     from_memory: bool = field(default=False)
 
@@ -151,16 +149,16 @@ class PdfSegments(FileIterator):
     def __iter__(self):
         return chain(
             FileInfo(self.path, self.config),
-            PdfMeta(self.path, self.config, ),
-            PdfCont(self.path, self.config) if self.config.contents else iter([]),
-            PdfAnnots(self.path, self.config) if self.config.contents else iter([]),
+            PdfMeta(self.path, self.config),
+            iter(PdfCont(self.path, self.config)) if self.config.contents else iter([]),
+            iter(PdfAnnots(self.path, self.config)) if self.config.contents else iter([]),
         )
 
 
 def parser():
     parser = argparse.ArgumentParser(description='All-seeing Eye: Search PDF metadata and contents')
     parser.add_argument('query', help='Query for substring in metadata')
-    parser.add_argument('-d', '--directories', type=os.path.expanduser,
+    parser.add_argument('-d', '--directories', type=str,
                         nargs='+', help='Directories to search', default=[])
     parser.add_argument('-c', '--contents', help='Seach contents as well (slower)',
                         action='store_true')
@@ -175,8 +173,7 @@ def parser():
     parser.add_argument('-f', '--force', help='overwrite setting from config.json file',
                         action='store_true')
     parser.add_argument('-r', '--reindex', help='rewrite the index', action='store_true')
-    parser.add_argument('--config', type=os.path.expanduser,
-                        help='path to the config file',
+    parser.add_argument('--config', type=str, help='path to the config file',
                         default='~/.config/ase/config.json')
     return parser
 

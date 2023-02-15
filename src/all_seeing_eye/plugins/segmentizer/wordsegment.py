@@ -12,10 +12,10 @@ class Wordsegment(Segmentizer):
     def __post_init__(self):
         # wordsegment.segment needs this depth
         sys.setrecursionlimit(2000)
-        wordsegment.load()
+        wordsegment.load()  # type: ignore
 
     def segment(self, sentence):
         try:
-            return " ".join(wordsegment.segment(sentence))
+            return " ".join(wordsegment.segment(sentence))  # type: ignore
         except RecursionError:
             return self.default_segment(sentence)

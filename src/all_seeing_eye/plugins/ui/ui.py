@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from dataclasses import field
-from typing import Iterator, Type, Any
+from typing import Iterator, Type, Any, Optional
 from all_seeing_eye.plugins.plugins import Plugin
 
 
@@ -8,7 +8,7 @@ class Ui(Plugin):
     """
     Interface for a Token library
     """
-    app: Type[Any] = field(default=None, init=False)
+    app: Optional[Type[Any]] = field(default=None, init=False)
     _module_name = 'all_seeing_eye.plugins.ui.default_ui'
     _type = 'UI'
 

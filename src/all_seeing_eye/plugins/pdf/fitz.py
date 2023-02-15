@@ -1,8 +1,7 @@
 import fitz
-from dataclasses import dataclass
 from all_seeing_eye.plugins.pdf.pdf import Pdf
 
-@dataclass
+
 class Fitz(Pdf):
 
     def open(self, path):

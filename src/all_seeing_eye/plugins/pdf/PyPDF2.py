@@ -1,13 +1,12 @@
-import PyPDF2
-from dataclasses import dataclass
+import PyPDF2 as PyPDF2lib
 from all_seeing_eye.plugins.pdf.pdf import Pdf
 
-@dataclass
+
 class PyPDF2(Pdf):
 
     def open(self, path):
         self.file_handle = open(path, 'rb')
-        self.pdf = PyPDF2.PdfReader(self.file_handle)
+        self.pdf = PyPDF2lib.PdfReader(self.file_handle)
         return self.pdf
 
     def close(self):
@@ -22,7 +21,7 @@ class PyPDF2(Pdf):
         return (page for page in self.pdf.pages)
 
     def get_page_nr(self, page):
-        return list(self.get_pages()).index(page)+1
+        return list(self.pages).index(page)+1
 
     def get_page_text(self, page):
         return page.extract_text().replace('\n', ' ')

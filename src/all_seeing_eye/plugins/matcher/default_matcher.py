@@ -1,8 +1,6 @@
-from fuzzywuzzy import fuzz
-from dataclasses import dataclass
 from all_seeing_eye.plugins.matcher.matcher import Matcher
 
-@dataclass
+
 class Default(Matcher):
 
     def score(self, term: str, query: str) -> int:

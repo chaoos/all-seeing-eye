@@ -1,12 +1,9 @@
-from dataclasses import dataclass
 from all_seeing_eye.plugins.ui.ui import Ui
-from all_seeing_eye.ase import App
 from tqdm import tqdm
 import os
 
-@dataclass
+
 class Default(Ui):
-    app: App
 
     def set_description(self, x):
         self.bar.set_description(f"File {os.path.basename(x)}")
@@ -25,5 +22,5 @@ class Default(Ui):
     def show_results(self):
         print(self.app.matches)
 
-    def new_match(match):
+    def new_match(self, match):
         print(match)

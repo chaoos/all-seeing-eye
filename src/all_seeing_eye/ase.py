@@ -1,142 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import os
-from termcolor import colored
-import textwrap
 import pickle
 import hashlib
 from dataclasses import dataclass, field
-from typing import Dict, Union, List, Iterator
+from typing import List, Iterator
 from itertools import chain
-from dacite import from_dict, Config
 from abc import ABC, abstractmethod
-from all_seeing_eye.plugins.pdf.pdf import Pdf
-from all_seeing_eye.plugins.segmentizer.segmentizer import Segmentizer
-from all_seeing_eye.plugins.tokenizer.tokenizer import Tokenizer
-from all_seeing_eye.plugins.matcher.matcher import Matcher
-from all_seeing_eye.plugins.ui.ui import Ui
-from typing import Generator, List, Callable, Optional
-from functools import partial, reduce
+from all_seeing_eye.lib.app import App, SearchConfig, Item, Match
 
-# The function is usable such as combine(f,g)(x) with is equivalent to g(f(x)).
-combine = lambda *xs: partial (reduce, lambda v,x: x(v), xs)
-
-@dataclass
-class Item:
-    """
-    This class describes a search item.
-    """
-    path: str = None
-    where: str = None
-    term: Dict[str, str] = field(default_factory=dict)
-
-@dataclass(order=True)
-class Match:
-    """
-    This class describes a match.
-    """
-    score: int = field(default=0, compare=True)
-    item: Item = field(default_factory=Item, compare=False)
-
-    def __str__(self):
-        score = colored(f"(score = {self.score})", "green" if self.score > 95 else "light_green")
-        where = colored(f"{self.item.where}", attrs=["bold"])
-        if self.item.path is not None:
-            basename = os.path.basename(self.item.path)
-            dirname = os.path.dirname(self.item.path)
-        else:
-            basename = None
-            dirname = None
-        file_len = os.get_terminal_size().columns - len(" • {file}: {score}".format(score=score, file=""))
-        file = colored(textwrap.shorten(f"{basename}", width=file_len), None, attrs=["underline"])
-        match = "\n".join(
-            textwrap.wrap(
-                colored(f"\"{self.item.term.get('display')}\"", None, attrs=["dark"]),
-                width=os.get_terminal_size().columns-10,
-                initial_indent="\t",
-                subsequent_indent="\t"
-            )
-        )
-
-        return (
-            f" • {file}: {score}\n"
-          + f"\tFound in {where}, directory: {dirname}:\n"
-          + f"{match}"
-        )
-
-@dataclass
-class SearchConfig:
-    """
-    This class describes a search setup.
-    """
-    cache_dir: Optional[str] = field(default=None, hash=False)
-    segmentize: bool = field(default=False, hash=True)
-    tokenize: bool = field(default=False, hash=True)
-    contents: bool = field(default=False, hash=True)
-    directories: List[str] = field(default_factory=list, hash=False)
-    segmentizer: Segmentizer = field(default_factory=Segmentizer.get_instance, hash=False)
-    tokenizer: Tokenizer = field(default_factory=Tokenizer.get_instance, hash=False)
-    matcher: Matcher = field(default_factory=Matcher.get_instance, hash=False)
-    pdf: Pdf = field(default_factory=Pdf.get_instance, hash=False)
-    ui: Ui = field(default_factory=Ui.get_class, hash=False)
-    reindex: bool = field(default=False, hash=False)
-    __files: List = field(default=None, init=False, repr=False)
-
-
-    @property
-    def files(self) -> List:
-        """
-        Property holding a list of files to search, should be a list, because we
-        want to know how many files there are in order to show a progress bar.
-        
-        :returns:   The list of files
-        :rtype:     List
-        """
-        
-        if self.__files is None:
-            is_pdf = lambda y: y.endswith("pdf")
-            pdfs = filter(is_pdf, filter(os.path.isfile, self.directories))
-            dirs = filter(os.path.isdir, self.directories)
-            dir_walk = chain.from_iterable(map(os.walk, dirs))
-            join = lambda x: map(partial(os.path.join, x[0]), filter(is_pdf, x[2]))
-            self.__files = list(chain(pdfs, chain.from_iterable(map(join,dir_walk))))
-        return self.__files
-
-def config_factory(app, args: argparse.Namespace) -> SearchConfig:
-    """
-    Instantiate the SearchConfig object.
-    
-    :param      args:  The arguments
-    :type       args:  Return value of parser.parse_args()
-    
-    :returns:   The configuration.
-    :rtype:     SearchConfig
-    """
-    file = {}
-    if os.path.exists(args.config):
-        with open(args.config) as f:
-            try:
-                file = json.load(f)
-            except json.decoder.JSONDecodeError:
-                print(f"file {args.config} contains invalid json")
-                exit(1)
-
-    data = {**file, **args.__dict__} if args.force else {**args.__dict__, **file}
-    if not args.force:
-        data['directories'] += args.directories
-
-    cfg = Config(type_hooks={
-        Segmentizer: lambda p: Segmentizer.get_instance(p.get("module_name")),
-        Tokenizer: lambda p: Tokenizer.get_instance(p.get("module_name")),
-        Matcher: lambda p: Matcher.get_instance(p.get("module_name")),
-        Pdf: lambda p: Pdf.get_instance(p.get("module_name")),
-        Ui: lambda p: Ui.get_class(p.get("module_name")),
-        str: combine(os.path.expanduser, os.path.abspath), # also applies for List[str]
-    })
-
-    return from_dict(data_class=SearchConfig, data=data, config=cfg)
 
 @dataclass
 class FileIterator:
@@ -147,6 +20,7 @@ class FileIterator:
         if segmentize:
             word = self.config.segmentizer.segment(word)
         return {'display': word, 'search': word}
+
 
 @dataclass
 class FileInfo(FileIterator):
@@ -162,6 +36,7 @@ class FileInfo(FileIterator):
             }),
         ])
 
+
 @dataclass
 class PdfMeta(FileIterator):
     """
@@ -170,10 +45,11 @@ class PdfMeta(FileIterator):
     def __iter__(self):
         self.config.pdf.open(self.path)
         return iter(Item(self.path, "Metadata", self.segment(v, self.config.segmentize))
-            for (k,v) in self.config.pdf.metadata)
+                    for (k, v) in self.config.pdf.metadata)
 
     def __del__(self):
         self.config.pdf.close()
+
 
 @dataclass
 class PdfIterator(ABC, FileIterator):
@@ -206,14 +82,11 @@ class PdfIterator(ABC, FileIterator):
             return iter(self.iter_items)
         else:
             return filter(lambda x: x is not None,
-                (
-                    self.factory(Item,
-                        path=self.path,
-                        where=self.get_metainfo(page),
-                        term=self.segment(item, self.config.segmentize)
-                    ) for page in self.config.pdf.pages for item in self.get_items_on_page(page)
-                )
-            )
+                          (self.factory(Item,
+                                        path=self.path,
+                                        where=self.get_metainfo(page),
+                                        term=self.segment(item, self.config.segmentize))
+                           for page in self.config.pdf.pages for item in self.get_items_on_page(page)))
 
     def factory(self, object, *args, **kwargs):
         try:
@@ -283,63 +156,44 @@ class PdfSegments(FileIterator):
             PdfAnnots(self.path, self.config) if self.config.contents else iter([]),
         )
 
-class MatchList(list):
-    on_append: Callable = field(default=lambda x: None)
-
-    def append(self, match):
-        self.on_append(match)
-        return super().append(match)
-
-    def __str__(self):
-        self.sort()
-        hr = "─"*os.get_terminal_size().columns + "\n"
-        return f"{hr}" + "\n".join(map(str, self)) + f"\n{hr}{len(self)} results found."
-
-@dataclass
-class App():
-    args: argparse.Namespace
-    matches: MatchList = field(default_factory=MatchList)
-    config: SearchConfig = field(default_factory=SearchConfig)
-
-    def __post_init__(self):
-        self.config = config_factory(self, self.args)
-        self.matches.on_append = self.config.ui.new_match # todo: why class method?
 
 def parser():
     parser = argparse.ArgumentParser(description='All-seeing Eye: Search PDF metadata and contents')
     parser.add_argument('query', help='Query for substring in metadata')
-    parser.add_argument('-d','--directories', type=os.path.expanduser,
-        nargs='+', help='Directories to search', default=[])
-    parser.add_argument('-c','--contents', help='Seach contents as well (slower)',
-        action='store_true')
+    parser.add_argument('-d', '--directories', type=os.path.expanduser,
+                        nargs='+', help='Directories to search', default=[])
+    parser.add_argument('-c', '--contents', help='Seach contents as well (slower)',
+                        action='store_true')
     parser.add_argument('--break', dest='brk', help='Stop after first match for each file',
-        action='store_true')
+                        action='store_true')
     parser.add_argument('--th', '--threshold', dest='threshold',
-        help='Search score threshold', type=int, default=70)
+                        help='Search score threshold', type=int, default=70)
     parser.add_argument('-s', dest='segmentize', help='Segmentize words (very slow)',
-        action='store_true')
+                        action='store_true')
     parser.add_argument('-t', dest='tokenize',
-        help='Tokenize the pages using sent_tokenize() (slower)', action='store_true')
+                        help='Tokenize the pages using sent_tokenize() (slower)', action='store_true')
     parser.add_argument('-f', '--force', help='overwrite setting from config.json file',
-        action='store_true')
-    parser.add_argument('-r', '--reindex', help='rewrite the index',action='store_true')
+                        action='store_true')
+    parser.add_argument('-r', '--reindex', help='rewrite the index', action='store_true')
     parser.add_argument('--config', type=os.path.expanduser,
-        help='path to the config file',
-        default='~/.config/ase/config.json')
-    return parser    
+                        help='path to the config file',
+                        default='~/.config/ase/config.json')
+    return parser
+
 
 def main():
 
     app = App(parser().parse_args())
     print(f"{app.config = }")
 
-    with app.config.ui(app) as ui:
+    with app.config.ui as ui:
         for path in ui.progress(app.config.files):
             for item in PdfSegments(path, app.config):
                 if (score := app.config.matcher.score(item.term.get('search'), app.args.query)) >= app.args.threshold:
                     app.matches.append(Match(score, item))
 
         ui.show_results()
+
 
 if __name__ == '__main__':
     main()

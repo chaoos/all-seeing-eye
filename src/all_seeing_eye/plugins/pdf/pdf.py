@@ -1,16 +1,12 @@
-from abc import ABC, abstractmethod
-from importlib import import_module
-from dataclasses import dataclass
-from typing import List, Generator, Dict
+from abc import abstractmethod
+from typing import List, Generator, Dict, Any
 from all_seeing_eye.plugins.plugins import Plugin
 
-@dataclass
+
 class Pdf(Plugin):
     """
     Interface for a PDF library
     """
-    _instance = None
-    _class = None
     _module_name = 'all_seeing_eye.plugins.pdf.pdfplumber'
     _type = 'PDF'
 
@@ -29,7 +25,7 @@ class Pdf(Plugin):
 
     @property
     @abstractmethod
-    def pages(self) -> Generator:
+    def pages(self) -> Generator[Any, Any, Any]:
         pass
 
     @property

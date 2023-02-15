@@ -1,11 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import field
 from all_seeing_eye.plugins.ui.ui import Ui
-from all_seeing_eye.ase import App
 from rich.progress import Progress
 
-@dataclass
+
 class Rich(Ui):
-    app: App
     prog: Progress = field(default_factory=Progress)
 
     def __post_init__(self):
@@ -29,5 +27,5 @@ class Rich(Ui):
     def show_results(self):
         print(self.app.matches)
 
-    def new_match(match):
+    def new_match(self, match):
         print(match)

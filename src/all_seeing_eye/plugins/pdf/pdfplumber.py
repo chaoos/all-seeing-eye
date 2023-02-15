@@ -1,8 +1,7 @@
 import pdfplumber
-from dataclasses import dataclass
 from all_seeing_eye.plugins.pdf.pdf import Pdf
 
-@dataclass
+
 class PdfPlumber(Pdf):
 
     def open(self, path):
@@ -32,4 +31,4 @@ class PdfPlumber(Pdf):
 
     def get_page_annots(self, page):
         return filter(lambda x: x is not None,
-            map(lambda a: a.get('contents'), page.annots))
+                      map(lambda a: a.get('contents'), page.annots))
